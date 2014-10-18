@@ -35,6 +35,9 @@ unsigned int melody[] = {
     262, 262, 262, 0, 330, 330, 330, 0, 392, 392, 392, 0, 523, 523, 523, 523,
     523, 523, 523, 0, 392, 392, 392, 0, 523, 523, 523, 523, 523, 523, 523, 0
 };
+unsigned int game_over_melody[] = {
+    587, 587, 587, 0, 554, 554, 554, 0, 523, 523, 523, 0
+};
 
 bool is_same_color(){
     for (int i=1; i<n_leds; i++){
@@ -70,9 +73,20 @@ void anim_level_up(){
     analogWrite(LEDSTRIP, 0);
 }
 
-void play(){
+void anim_game_over(){
+    for (int i=0; i<n_leds; i++)
+        leds[i] = 1; //RED
+    light_leds();
+    for (int i=0; i<sizeof(game_over_melody)/sizeof(int); i++){
+        tone(BUZZER, game_over_melody[i]);
+        delay(200);
+    }
+    tone(BUZZER, 0);
+}
+
+bool play(){
     unsigned long int last_change = millis();
-    unsigned long int last_echo = millis();
+    unsigned long int turn_start = millis();
 
     /* 1) Choose initial colors */
     while (is_same_color()){
@@ -118,9 +132,15 @@ void play(){
 
         /* Display colorz */
         light_leds();
+
+        if (millis() - turn_start > 15000){
+            anim_game_over();
+            return false;
+        }
     }
 
     anim_level_up();
+    return true;
 }
 
 bool a_button_pressed(){
@@ -140,9 +160,9 @@ void game(){
             last_frame = millis();
         }
     }
+    level = 0;
     analogWrite(LEDSTRIP, 0);
-    for (level=0; level<=150; level++)
-        play();
+    while (play()) level++;
 }
 
 void setup(){
