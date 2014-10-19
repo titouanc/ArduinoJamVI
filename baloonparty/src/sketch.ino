@@ -235,6 +235,15 @@ void setup(){
 }
 
 void loop(){
-    //game();
-    simon_game();
+    for (int i=0; i<n_leds; i++)
+        if (button_on(buttons[i]))
+            game();
+    
+    int count = 0;
+    for (int i=0; i<30; i++){
+        if (digitalRead(12) == HIGH)
+            count++;
+    }
+    if (count == 30)
+        simon_game();
 }
