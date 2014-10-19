@@ -23,6 +23,7 @@ ShiftRegister registre(2, 3, 4, 5, 6, 2);
 
 #define n_leds sizeof(leds)
 char leds[] = {1, 1, 1, 1, 1};
+int simon_colors[] = {1, 6, 4, 7, 2};
 int buttons[] = {0, 1, 2, 3, 4};
 
 int level = 0;
@@ -55,7 +56,12 @@ void light_leds(){
     registre.output();
 }
 
-static inline bool button_on(int pin){return analogRead(pin) < 512;}
+static inline bool button_on(int pin, unsigned int n_active=30){
+    for (int i=0; i<n_active; i++)
+        if (analogRead(pin) > 512)
+            return false;
+    return true;
+}
 
 void anim_level_up(){
     for (int i=0; i<sizeof(melody); i++){
@@ -99,17 +105,8 @@ bool play(){
 
         /* Check for buttons */
         for (int i=0; i<n_leds; i++){
-            bool active = true;
-
-            /* Count N active states before considering it as active filtering) */
-            for (int z=0; z<30; z++){
-                if (! button_on(buttons[i])){
-                    active = false;
-                }
-            }
-
             /* If button active, go to next color */
-            if (active){
+            if (button_on(buttons[i])){
                 tone(BUZZER, notes[i]);
                 leds[i] ++;
                 if (leds[i] > 7)
@@ -165,11 +162,79 @@ void game(){
     while (play()) level++;
 }
 
+void clear(){
+    for (int i=0; i<n_leds; i++)
+        leds[i] = 0;
+    light_leds();
+    tone(BUZZER, 0);
+}
+
+void simon_led_on(int ledid){
+    leds[ledid] = simon_colors[ledid];
+    light_leds();
+    tone(BUZZER, notes[ledid]);
+}
+
+void simon_led_off(int ledid){
+    leds[ledid] = 0;
+    light_leds();
+    tone(BUZZER, 0);
+}
+
+char simon_vector[1000];
+unsigned int simon_turn = 1;
+
+bool simon_game_turn(){
+    /* Simon's play */
+    for (int i=0; i<simon_turn; i++){
+        simon_led_on(simon_vector[i]);
+        delay(250);
+        simon_led_off(simon_vector[i]);
+        delay(15);
+    }
+
+    /* User's play */
+    for (int i=0; i<simon_turn; i++){
+        bool played = false;
+        while (! played){
+            for (int j=0; j<n_leds; j++){
+                if (button_on(j)){
+                    played = true;
+                    simon_led_on(j);
+                    while (button_on(j));
+                    simon_led_off(j);
+                    if (j != simon_vector[i])
+                        return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+void simon_game(){
+    clear();
+
+    simon_turn = 1;
+    for (int i=0; i<sizeof(simon_vector); i++)
+        simon_vector[i] = random(0, 5);
+
+    while (simon_game_turn()){
+        simon_turn++;
+        anim_level_up();
+        clear();
+    }
+
+    anim_game_over();
+}
+
 void setup(){
-    randomSeed(analogRead(0));
+    randomSeed(analogRead(5));
     analogWrite(LEDSTRIP, 0);
 }
 
 void loop(){
-    game();
+    //game();
+    simon_game();
 }
