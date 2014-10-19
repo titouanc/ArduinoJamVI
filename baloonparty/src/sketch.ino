@@ -31,7 +31,7 @@ int level = 0;
 #define BUZZER 8
 #define LEDSTRIP 9
 
-unsigned int notes[] = {440, 494, 523, 587, 659};
+unsigned int notes[] = {494, 440, 523, 587, 659};
 unsigned int melody[] = {
     262, 262, 262, 0, 330, 330, 330, 0, 392, 392, 392, 0, 523, 523, 523, 523,
     523, 523, 523, 0, 392, 392, 392, 0, 523, 523, 523, 523, 523, 523, 523, 0
